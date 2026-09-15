@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07131f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="NetScope">
+  <title>{{ app_name }}</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/netscope-icon.svg">
+  <link rel="stylesheet" href="/static/styles.css?v=4.0.1">
+  <style>[hidden]{display:none!important}</style>
+</head>
+<body>
+  <section id="login-panel" class="login-shell">
+    <div class="login-orb orb-one"></div><div class="login-orb orb-two"></div>
+    <form id="login-form" class="login-card">
+      <div class="brand-mark">N</div>
+      <p id="login-eyebrow" class="eyebrow">PRIVATE NETWORK OBSERVABILITY</p>
+      <h1 id="login-title">Your network,<br>under control.</h1>
+      <p id="login-copy" class="muted">Traffic, device intelligence, connection quality, and security telemetry for your home lab.</p>
+      <label>Username<input id="username" autocomplete="username" required></label>
+      <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+      <button id="login-submit" type="submit" class="button primary full">Enter dashboard <span>→</span></button>
+      <p id="login-error" class="form-error"></p>
+    </form>
+  </section>
+
+  <div id="app-shell" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark small">N</div><div><strong>NetScope</strong><span>home lab</span></div></div>
+      <nav id="main-nav">
+        <button class="nav-item active" data-view="overview"><span>⌂</span>Overview</button>
+        <button class="nav-item" data-view="diagnose"><span>✦</span>Diagnostics</button>
+        <button class="nav-item" data-view="devices"><span>◉</span>Devices</button>
+        <button class="nav-item" data-view="traffic"><span>⌁</span>Traffic</button>
+        <button class="nav-item" data-view="security"><span>◇</span>Security <b id="alert-badge" hidden>0</b></button>
+        <button class="nav-item" data-view="router"><span>⌘</span>Router</button>
+      </nav>
+      <div class="sidebar-status">
+        <div class="status-line"><span id="capture-dot" class="live-dot"></span><div><strong id="capture-label">Capture</strong><small id="capture-subtitle">Checking status</small></div></div>
+        <button id="logout" class="nav-item"><span>↪</span>Sign out</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div><p class="eyebrow" id="view-eyebrow">NETWORK COMMAND CENTER</p><h1 id="view-title">Overview</h1></div>
+        <div class="top-actions"><span id="last-updated" class="updated">Updating…</span><select id="time-range" class="range-select" aria-label="Traffic time range"><option value="1">1 hour</option><option value="24" selected>24 hours</option><option value="168">7 days</option></select><button id="install-app" class="button ghost" hidden>Install app</button><button id="scan" class="button ghost">↻ Scan network</button></div>
+      </header>
+
+      <section class="view active" data-view-panel="overview">
+        <article id="home-diagnostic" class="welcome-card technical-strip panel diagnostic-unknown">
+          <div class="welcome-copy"><p class="eyebrow">CONNECTION DIAGNOSTICS</p><h2 id="home-diagnostic-title">No active connection faults</h2><p id="home-diagnostic-copy" class="muted">Gateway, internet, and DNS probes are ready.</p></div>
+          <div class="welcome-actions"><b id="home-health-symbol" class="strip-status">?</b><button class="button ghost run-diagnostic">Run diagnostics</button><button class="text-button" data-go="diagnose">Open console →</button></div>
+        </article>
+        <div id="visibility-banner" class="visibility-banner"><span>◉</span><div><strong>Checking what NetScope can see…</strong><p></p></div></div>
+        <div class="hero-grid technical-hero">
+          <article class="panel traffic-hero">
+            <div class="panel-title"><div><p class="eyebrow">LIVE TRAFFIC</p><h2>Network activity</h2></div><div class="legend"><span><i class="upload"></i>Upload</span><span><i class="download"></i>Download</span></div></div>
+            <div id="traffic-chart" class="chart"></div>
+            <div class="chart-footer"><span id="traffic-window-label">Last 24 hours</span><span id="traffic-total">No traffic yet</span></div>
+          </article>
+          <article class="panel speed-card">
+            <div class="panel-title"><div><p class="eyebrow">ISP PERFORMANCE</p><h2>Internet speed</h2></div><button class="icon-button run-speedtest" title="Run speed test">↻</button></div>
+            <div class="speed-primary"><span>DOWNLOAD</span><strong id="speed-download">—</strong><small>Mbps</small></div>
+            <div id="speed-sparkline" class="speed-sparkline"></div>
+            <div class="speed-secondary"><div><span>UPLOAD</span><strong id="speed-upload">—</strong><small>Mbps</small></div><div><span>LATENCY</span><strong id="speed-latency">—</strong><small>ms</small></div><div><span>JITTER</span><strong id="speed-jitter">—</strong><small>ms</small></div></div>
+            <p id="speed-tested-at" class="muted small-text center">No test recorded</p>
+          </article>
+          <article class="panel health-card">
+            <div class="panel-title"><div><p class="eyebrow">SECURITY POSTURE</p><h2>Network health</h2></div><span id="health-status" class="pill">Checking</span></div>
+            <div class="score-wrap"><div id="score-ring" class="score-ring"><strong id="security-score">—</strong><span>/ 100</span></div></div>
+            <p id="health-copy" class="muted center">Reviewing local signals.</p>
+          </article>
+        </div>
+        <div id="summary-cards" class="stat-grid"></div>
+        <div class="dashboard-grid">
+          <article class="panel span-7"><div class="panel-title"><div><p class="eyebrow">BANDWIDTH</p><h2>Top devices</h2></div><button class="text-button" data-go="devices">View all →</button></div><div id="top-devices" class="rank-list"></div></article>
+          <article class="panel span-5"><div class="panel-title"><div><p class="eyebrow">DESTINATIONS</p><h2>Where traffic goes</h2></div></div><div id="top-destinations" class="destination-list"></div></article>
+          <article class="panel span-5"><div class="panel-title"><div><p class="eyebrow">PROTOCOL MIX</p><h2>Traffic composition</h2></div></div><div id="protocols" class="protocol-wrap"></div></article>
+          <article class="panel span-7"><div class="panel-title"><div><p class="eyebrow">LOCAL MAP</p><h2>Network topology</h2></div><span class="muted small-text">Select a device for details</span></div><div id="topology" class="topology"></div></article>
+          <article class="panel span-6"><div class="panel-title"><div><p class="eyebrow">HOUSEHOLD INSIGHTS</p><h2>The useful bits</h2></div></div><div id="household-insights" class="insight-grid"></div></article>
+          <article class="panel span-6"><div class="panel-title"><div><p class="eyebrow">NETWORK TIME MACHINE</p><h2>What changed</h2></div></div><div id="activity-feed" class="activity-feed"></div></article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="diagnose">
+        <article id="diagnostic-hero" class="diagnostic-hero panel diagnostic-unknown">
+          <div><p class="eyebrow">ACTIVE PATH ANALYSIS</p><h2 id="diagnostic-title">Gateway and internet diagnostics</h2><p id="diagnostic-summary" class="muted">Probe the default gateway, external reachability, DNS resolution, latency, jitter, and packet loss.</p><button class="button primary run-diagnostic">Run diagnostics <span>→</span></button><p id="diagnostic-time" class="muted small-text"></p></div>
+          <div class="diagnostic-illustration"><div class="wave wave-one"></div><div class="wave wave-two"></div><div class="wave wave-three"></div><span>⌁</span></div>
+        </article>
+        <div id="quality-stats" class="quality-grid"></div>
+        <div id="diagnostic-checks" class="check-grid"></div>
+        <div class="dashboard-grid diagnosis-grid">
+          <article class="panel span-7"><p class="eyebrow">WHAT TO DO NEXT</p><h2>Recommended steps</h2><div id="recommendations" class="recommendation-list"><div class="empty">Run a check to get advice for this network.</div></div></article>
+          <article class="panel span-5"><p class="eyebrow">CONNECTION DETAILS</p><h2>Your network</h2><div id="connection-details" class="service-list"></div><div class="privacy-note"><strong>Private by design</strong><p>Checks stay on this NetScope installation. No packet contents are saved.</p></div></article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="devices">
+        <article class="panel">
+          <div class="table-toolbar"><div><p class="eyebrow">ASSET INVENTORY</p><h2>Known network devices</h2><p class="muted">Classify endpoints, assign trust state, and inspect per-device traffic metadata.</p></div><div class="filters"><input id="device-search" placeholder="Search devices"><select id="device-filter"><option value="all">All devices</option><option value="online">Online</option><option value="review">Needs review</option><option value="trusted">Trusted</option></select></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Status</th><th>Device</th><th>Address</th><th>Category</th><th>Trust</th><th>Vendor</th><th>Last seen</th></tr></thead><tbody id="device-rows"></tbody></table></div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="traffic">
+        <article class="panel"><div class="panel-title"><div><p class="eyebrow">DATA USE</p><h2>Upload and download</h2></div><span class="pill neutral">Last 24 hours</span></div><div id="traffic-chart-large" class="chart large"></div></article>
+        <div class="dashboard-grid traffic-grid"><article class="panel span-6"><p class="eyebrow">TOP TALKERS</p><h2>Device bandwidth</h2><div id="traffic-devices" class="rank-list"></div></article><article class="panel span-6"><p class="eyebrow">REMOTE SERVICES</p><h2>Top destinations</h2><div id="traffic-destinations" class="destination-list"></div></article></div>
+      </section>
+
+      <section class="view" data-view-panel="security">
+        <div class="security-banner panel"><div><p class="eyebrow">LOCAL SECURITY SIGNALS</p><h2 id="security-heading">Everything looks calm</h2><p class="muted">Alerts are created from new devices, connection changes, and unusual outbound ports.</p></div><button id="read-all" class="button ghost">Mark all read</button></div>
+        <div id="alerts" class="alert-list"></div>
+      </section>
+
+      <section class="view" data-view-panel="router">
+        <div class="router-grid">
+          <article class="panel router-card"><div class="router-visual"><div class="router-body"><span></span><span></span><span></span></div><i></i><i></i></div><p class="eyebrow">HOME GATEWAY</p><h2>Router portal</h2><div id="router-status"></div><button id="reboot" class="button danger" disabled>Reboot router</button></article>
+          <article class="panel"><p class="eyebrow">NETSCOPE STATUS</p><h2>What this installation can do</h2><div id="system-services" class="service-list"></div><div class="info-callout"><strong id="router-visibility-title">Traffic visibility</strong><p id="router-visibility-copy">Checking capture position…</p></div></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <aside id="device-drawer" class="drawer" aria-hidden="true"><button id="close-drawer" class="drawer-close" aria-label="Close">×</button><div id="device-detail"></div></aside>
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <dialog id="reboot-dialog"><form method="dialog"><p class="eyebrow danger-text">HIGH IMPACT ACTION</p><h2>Reboot the router?</h2><p class="muted">Every active connection will be interrupted. Type <strong>REBOOT</strong> to continue.</p><input id="reboot-confirmation" autocomplete="off" placeholder="Type REBOOT"><div class="dialog-actions"><button value="cancel" class="button ghost">Cancel</button><button id="confirm-reboot" value="default" class="button danger">Reboot now</button></div></form></dialog>
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/app.js?v=4.0.1" defer></script>
+</body>
+</html>

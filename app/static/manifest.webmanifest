@@ -1,0 +1,12 @@
+{
+  "name": "NetScope Home Wi-Fi",
+  "short_name": "NetScope",
+  "description": "A friendly, private home Wi-Fi health and device dashboard.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07131f",
+  "theme_color": "#07131f",
+  "icons": [
+    { "src": "/static/netscope-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
