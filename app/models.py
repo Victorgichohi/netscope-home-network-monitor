@@ -156,3 +156,21 @@ class SpeedTestRun(Base):
     jitter_ms: Mapped[float | None] = mapped_column(Float)
     bytes_transferred: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(Text)
+
+
+class RouterHealthSample(Base):
+    __tablename__ = "router_health_samples"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    status: Mapped[str] = mapped_column(String(24), default="ok", index=True)
+    model: Mapped[str | None] = mapped_column(String(80))
+    rx_power_dbm: Mapped[float | None] = mapped_column(Float)
+    tx_power_dbm: Mapped[float | None] = mapped_column(Float)
+    temperature_c: Mapped[int | None] = mapped_column(Integer)
+    cpu_percent: Mapped[int | None] = mapped_column(Integer)
+    uptime_seconds: Mapped[int | None] = mapped_column(Integer)
+    wan_status: Mapped[str | None] = mapped_column(String(32))
+    snapshot_json: Mapped[str] = mapped_column(Text, default="{}")
+    findings_json: Mapped[str] = mapped_column(Text, default="[]")
+    error: Mapped[str | None] = mapped_column(Text)

@@ -4,7 +4,7 @@ from sqlalchemy import delete
 
 from app.config import Settings
 from app.database import SessionLocal
-from app.models import DnsObservation, TrafficFlow
+from app.models import DnsObservation, RouterHealthSample, TrafficFlow
 
 
 def purge_expired_metadata(settings: Settings) -> None:
@@ -18,6 +18,11 @@ def purge_expired_metadata(settings: Settings) -> None:
         db.execute(
             delete(DnsObservation).where(
                 DnsObservation.last_seen < now - timedelta(days=settings.dns_retention_days)
+            )
+        )
+        db.execute(
+            delete(RouterHealthSample).where(
+                RouterHealthSample.created_at < now - timedelta(days=settings.router_health_retention_days)
             )
         )
         db.commit()

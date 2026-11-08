@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -23,3 +24,7 @@ class RouterController(ABC):
     @abstractmethod
     def reboot(self) -> None:
         raise NotImplementedError
+
+    def health_snapshot(self) -> Any | None:
+        """Return a read-only health snapshot when the adapter supports one."""
+        return None

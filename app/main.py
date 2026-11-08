@@ -21,6 +21,7 @@ from app.security import hash_password
 from app.services.discovery import DiscoveryService
 from app.services.diagnostics import NetworkDiagnosticsService
 from app.services.maintenance import purge_expired_metadata
+from app.services.router_health import RouterHealthService
 from app.services.traffic import TrafficCollector
 from app.services.speedtest import SpeedTestService
 
@@ -87,6 +88,16 @@ async def lifespan(app: FastAPI):
             max_instances=1,
             coalesce=True,
         )
+    if settings.router_adapter == "huawei_ont" and settings.router_health_enabled:
+        app.state.scheduler.add_job(
+            RouterHealthService(settings, app.state.router_controller).run,
+            "interval",
+            seconds=settings.router_health_interval_seconds,
+            next_run_time=datetime.now(timezone.utc) + timedelta(seconds=30),
+            id="router-health",
+            max_instances=1,
+            coalesce=True,
+        )
     app.state.scheduler.add_job(
         purge_expired_metadata,
         "interval",
@@ -104,7 +115,7 @@ async def lifespan(app: FastAPI):
         app.state.scheduler.shutdown(wait=False)
 
 
-app = FastAPI(title=settings.app_name, version="0.4.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.5.0", lifespan=lifespan)
 app.include_router(api_router)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 

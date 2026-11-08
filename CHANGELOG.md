@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- Added a read-only `huawei_ont` router adapter for Huawei EchoLife GPON ONTs (tested against HG8546M firmware V5R019C00S100 page formats).
+- Reads fibre optical power, module temperature, CPU, uptime, PPPoE session state, DNS, MTU, carrier-grade NAT detection, and 2.4 GHz Wi-Fi configuration.
+- Added router health history with configurable polling and retention.
+- Added a router configuration audit: fibre signal thresholds, WAN state, PPPoE MTU, open/WEP/WPA1 security, TKIP, regulatory-domain mismatch, narrow channel width, and legacy 802.11b.
+- Warning and critical findings raise deduplicated alerts.
+- The adapter never reads Wi-Fi passphrases, WEP keys, WPS PINs, PPPoE credentials, serial numbers, or MAC addresses; tests assert this.
+
 ## 0.4.0
 
 - Restored the dense network-command-center interface.
