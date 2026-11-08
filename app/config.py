@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     speedtest_download_bytes: int = Field(default=10_000_000, ge=100_000, le=100_000_000)
     speedtest_upload_bytes: int = Field(default=2_000_000, ge=100_000, le=25_000_000)
 
-    router_adapter: Literal["disabled", "ssh", "http"] = "disabled"
+    router_adapter: Literal["disabled", "ssh", "http", "huawei_ont"] = "disabled"
     router_host: str = "192.168.1.1"
     router_port: int = Field(default=22, ge=1, le=65535)
     router_username: str | None = None
@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     router_http_reboot_url: str | None = None
     router_http_bearer_token: str | None = None
     router_verify_tls: bool = True
+    router_health_enabled: bool = True
+    router_health_interval_seconds: int = Field(default=900, ge=300)
+    router_expected_country: str | None = Field(default=None, min_length=2, max_length=2)
+    router_health_retention_days: int = Field(default=90, ge=1, le=3650)
 
     login_rate_limit: int = Field(default=5, ge=1)
     login_rate_window_seconds: int = Field(default=300, ge=30)

@@ -12,7 +12,7 @@ A private, technical home-network observability dashboard for device discovery, 
 
 ![NetScope diagnostics](docs/images/diagnostics.png)
 
-Version 0.4 returns to a technical network-command-center interface while retaining v0.3 diagnostics. It adds bounded download/upload speed tests, latency and jitter measurements, ISP availability analytics, speed history, selectable traffic windows, destination service classification, and automatic device-type inference.
+Version 0.5 adds read-only fibre-router health for Huawei GPON ONTs, with a router configuration audit. Version 0.4 returns to a technical network-command-center interface while retaining v0.3 diagnostics. It adds bounded download/upload speed tests, latency and jitter measurements, ISP availability analytics, speed history, selectable traffic windows, destination service classification, and automatic device-type inference.
 
 ## What it does
 
@@ -32,6 +32,7 @@ Version 0.4 returns to a technical network-command-center interface while retain
 - Flags newly discovered devices, online/offline changes, and unusual outbound service ports.
 - Lets you categorize devices and mark them trusted, guest, under review, or blocked.
 - Supports disabled-by-default router control through strict-host-key SSH or generic authenticated HTTP adapters.
+- Reads fibre signal, ISP session, and Wi-Fi configuration from Huawei GPON ONTs and audits them for line faults and weak settings.
 - Protects state-changing endpoints with signed HttpOnly sessions, CSRF tokens, confirmation, rate limits, and audit logging.
 - Clearly labels traffic visibility as device discovery only, this computer, or whole network.
 - Provides a first-run local setup screen when no administrator is configured.
@@ -105,6 +106,36 @@ For SSH, set `HNM_ROUTER_ADAPTER=ssh`, host, username, and either password or a 
 
 For HTTP, set `HNM_ROUTER_ADAPTER=http`, the status/reboot URLs, and bearer token if the router API uses one. TLS verification is enabled by default. Because consumer-router APIs vary widely, validate the exact endpoints and response behavior from the vendor documentation before enabling reboot.
 
+### Huawei GPON ONT health (`huawei_ont`)
+
+Many fibre ISPs install Huawei EchoLife ONTs such as the HG8546M (admin page usually at `192.168.100.1`). This adapter is read-only: it signs in, reads the status pages, signs out, and stores a health sample every 15 minutes by default.
+
+```bash
+HNM_ROUTER_ADAPTER=huawei_ont
+HNM_ROUTER_HOST=192.168.100.1
+HNM_ROUTER_USERNAME=telecomadmin
+HNM_ROUTER_PASSWORD=...
+HNM_ROUTER_EXPECTED_COUNTRY=KE
+```
+
+Each sample records:
+
+| Area | Fields | Why it matters |
+|---|---|---|
+| Fibre line | RX/TX optical power, module temperature | Separates a degrading line (ISP fault) from Wi-Fi or ISP-core problems. RX below -25 dBm is marginal; below -27 dBm is out of range. |
+| Router | CPU, uptime, model, firmware | Shows whether stalls track router load or uptime. |
+| ISP session | PPPoE state, DNS servers, MTU, CGNAT | Flags a dropped session, an oversized PPPoE MTU, and whether inbound connections are possible. |
+| Wi-Fi | Channel, width, country, security mode, encryption | Flags open/WEP/WPA1, TKIP (which caps 802.11n clients at legacy rates), wrong regulatory domain, 20 MHz width, and 802.11b. |
+
+Endpoints: `GET /api/router/health/latest`, `GET /api/router/health/history?hours=168`, `POST /api/router/health/run`.
+
+Notes:
+
+- The ONT allows one admin web session. A poll signs out anyone using the router page in a browser at that moment.
+- Reboot is deliberately not implemented for this adapter.
+- Wi-Fi passphrases, WEP keys, WPS PINs, PPPoE credentials, serial numbers, and MAC addresses appear in the router pages but are never parsed or stored.
+- Page parsing is covered by sanitized fixtures from an HG8546M on V5R019C00S100. Other firmware may differ; unparsed sections are left empty rather than guessed.
+
 ## Sharing and app installation
 
 - **Mac and Windows:** `netscope` already behaves like a local desktop app. A distributable `.app` or `.exe` can be built with PyInstaller on its target operating system; builds are OS-specific.
@@ -141,6 +172,7 @@ pytest --cov=app
 - `GET /api/traffic/top-destinations`, `GET /api/traffic/top-devices`, `GET /api/traffic/protocols`, `GET /api/traffic/timeline`
 - `GET /api/security/summary`, `GET /api/alerts`, `POST /api/alerts/{id}/read`
 - `GET /api/router/status`, `POST /api/router/reboot`
+- `GET /api/router/health/latest`, `GET /api/router/health/history`, `POST /api/router/health/run`
 - `GET /api/audit`
 
 ## Production notes

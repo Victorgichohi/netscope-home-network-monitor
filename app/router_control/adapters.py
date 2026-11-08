@@ -110,4 +110,8 @@ def build_router_controller(settings: Settings) -> RouterController:
         return SshRouterController(settings)
     if settings.router_adapter == "http":
         return HttpRouterController(settings)
+    if settings.router_adapter == "huawei_ont":
+        from app.router_control.huawei_ont import HuaweiOntController
+
+        return HuaweiOntController(settings)
     return DisabledRouterController()

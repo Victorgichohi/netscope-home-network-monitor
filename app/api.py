@@ -12,7 +12,17 @@ from sqlalchemy.orm import Session
 from app.audit import record_audit
 from app.config import Settings, get_settings
 from app.database import get_db
-from app.models import Alert, AuditEvent, Device, DiagnosticRun, DiscoveryRun, SpeedTestRun, TrafficFlow, User
+from app.models import (
+    Alert,
+    AuditEvent,
+    Device,
+    DiagnosticRun,
+    DiscoveryRun,
+    RouterHealthSample,
+    SpeedTestRun,
+    TrafficFlow,
+    User,
+)
 from app.schemas import DeviceOut, DeviceUpdate, LoginRequest, RebootRequest, SetupRequest, TrafficFlowOut
 from app.security import (
     RateLimitRule,
@@ -27,6 +37,7 @@ from app.services.discovery import DiscoveryService
 from app.services.diagnostics import NetworkDiagnosticsService
 from app.services.enrichment import classify_destination
 from app.services.network import detect_network
+from app.services.router_health import RouterHealthService
 from app.services.speedtest import SpeedTestService
 
 router = APIRouter(prefix="/api")
@@ -802,6 +813,70 @@ def reboot_router(
         raise HTTPException(status_code=502, detail="Router reboot failed; see audit log") from exc
     record_audit(db, actor=user.username, action="router.reboot", source_ip=source, success=True)
     return {"accepted": True}
+
+
+def router_health_dict(sample: RouterHealthSample, include_snapshot: bool = True) -> dict:
+    data = {
+        "id": sample.id,
+        "created_at": as_utc(sample.created_at),
+        "status": sample.status,
+        "model": sample.model,
+        "rx_power_dbm": sample.rx_power_dbm,
+        "tx_power_dbm": sample.tx_power_dbm,
+        "temperature_c": sample.temperature_c,
+        "cpu_percent": sample.cpu_percent,
+        "uptime_seconds": sample.uptime_seconds,
+        "wan_status": sample.wan_status,
+        "findings": json.loads(sample.findings_json or "[]"),
+        "error": sample.error,
+    }
+    if include_snapshot:
+        data["snapshot"] = json.loads(sample.snapshot_json or "{}")
+    return data
+
+
+@router.get("/router/health/latest")
+def latest_router_health(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    sample = db.scalar(select(RouterHealthSample).order_by(RouterHealthSample.created_at.desc()).limit(1))
+    return router_health_dict(sample) if sample else None
+
+
+@router.get("/router/health/history")
+def router_health_history(
+    hours: int = Query(default=168, ge=1, le=24 * 90),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    samples = db.scalars(
+        select(RouterHealthSample)
+        .where(RouterHealthSample.created_at >= since)
+        .order_by(RouterHealthSample.created_at.asc())
+    )
+    return [router_health_dict(sample, include_snapshot=False) for sample in samples]
+
+
+@router.post("/router/health/run", dependencies=[Depends(require_csrf)])
+def run_router_health(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+):
+    if settings.router_adapter != "huawei_ont":
+        raise HTTPException(status_code=409, detail="Router health requires a health-capable router adapter")
+    rate_limiter.check(f"router-health:{user.id}", RateLimitRule(3, 300))
+    sample_id = RouterHealthService(settings, request.app.state.router_controller).run()
+    sample = db.get(RouterHealthSample, sample_id)
+    record_audit(
+        db,
+        actor=user.username,
+        action="router.health",
+        source_ip=client_ip(request),
+        success=sample.status != "failed",
+        detail=f"status={sample.status}",
+    )
+    return router_health_dict(sample)
 
 
 @router.get("/audit")
